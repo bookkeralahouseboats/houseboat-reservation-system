@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Apple Web App Capable (Required for iOS PWA mode) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Houseboats">
+  <link rel="apple-touch-icon" href="./icons/BKH_icon_192x192.png">
+
   <link rel="manifest" href="manifest.json">
   <title>Houseboat Reservation System</title>
   <style>
@@ -21,7 +27,7 @@
     
     /* Install Banner Styling */
     #install-banner {
-      display: none; /* Hidden by default */
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
@@ -43,6 +49,35 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
+    /* iOS Instructions Popup */
+    #ios-banner {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+      background: #ffffff;
+      color: #333333;
+      padding: 14px 18px;
+      border-radius: 12px;
+      z-index: 9999;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid #e0e0e0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    #ios-banner strong {
+      color: #0078d4;
+    }
+    #ios-banner .close-ios {
+      float: right;
+      font-weight: bold;
+      color: #888;
+      cursor: pointer;
+    }
     
     iframe {
       width: 100%;
@@ -54,10 +89,16 @@
 </head>
 <body>
 
-  <!-- Custom PWA Install Banner -->
+  <!-- Android Install Banner -->
   <div id="install-banner">
     <span>Install App for quick access</span>
     <button id="install-btn">Install</button>
+  </div>
+
+  <!-- iOS Custom Prompt -->
+  <div id="ios-banner">
+    <span class="close-ios" onclick="document.getElementById('ios-banner').style.display='none'">✕</span>
+    To install on iPhone: tap <strong>Share</strong> <span style="font-size:16px;">⎋</span> then select <strong>'Add to Home Screen'</strong> <span style="font-size:16px;">➕</span>.
   </div>
 
   <iframe 
@@ -75,34 +116,33 @@
       });
     }
 
-    // Capture Install Prompt Event
+    // Android/Chrome Logic
     let deferredPrompt;
     const installBanner = document.getElementById('install-banner');
     const installBtn = document.getElementById('install-btn');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent default mini-infobar on mobile
       e.preventDefault();
       deferredPrompt = e;
-      // Show our custom install banner
       installBanner.style.display = 'flex';
     });
 
     installBtn.addEventListener('click', async () => {
       if (!deferredPrompt) return;
-      // Show native install dialog
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User choice outcome: ${outcome}`);
       deferredPrompt = null;
       installBanner.style.display = 'none';
     });
 
-    window.addEventListener('appinstalled', () => {
-      installBanner.style.display = 'none';
-      deferredPrompt = null;
-      console.log('PWA installed successfully!');
-    });
+    // iOS Detection Logic
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+    // Show iOS popup only if opened in Safari (not already installed as app)
+    if (isIOS && !isStandalone) {
+      document.getElementById('ios-banner').style.display = 'block';
+    }
   </script>
 </body>
 </html>
